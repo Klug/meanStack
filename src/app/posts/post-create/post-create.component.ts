@@ -13,9 +13,10 @@ import {Post} from '../post.model';
 export class PostCreateComponent implements OnInit {
   enteredTitle = '';
   enteredContent = '';
+  post: Post;
   isLoading = false;
   form: FormGroup;
-  post: Post;
+  imagePreview: string;
   private mode = 'create';
   private postId: string;
 
@@ -31,8 +32,15 @@ export class PostCreateComponent implements OnInit {
         this.isLoading = true;
         this.postsService.getPost(this.postId).subscribe(postData => {
           this.isLoading = false;
-          this.post = {id: postData._id, title: postData.title, content: postData.content};
-          this.form.setValue({'title': this.post.title, 'content': this.post.content });
+          this.post = {
+            id: postData._id,
+            title: postData.title,
+            content: postData.content
+          };
+          this.form.setValue({
+            'title': this.post.title,
+            'content': this.post.content
+          });
       });
       } else {
         this.mode = 'create';
@@ -50,7 +58,11 @@ export class PostCreateComponent implements OnInit {
     const file = (event.target as HTMLInputElement).files[0];
     this.form.patchValue({image: file});
     this.form.get('image').updateValueAndValidity();
-    console.log(this.form);
+    const reader = new FileReader();
+    reader.onload = () => {
+      this.imagePreview = reader.result;
+    }
+    reader.readAsDataURL(file);
   }
 
   onSavePost() {
