@@ -9,7 +9,7 @@ import {Post} from './post.model';
 @Injectable({providedIn: 'root'})
 export class PostsService {
   private posts: Post[] = [];
-  private postsUpdated = new Subject<Post[]>();
+  private postsUpdated = new Subject<{ posts: Post[], postCount: number }>();
 
   constructor(private http: HttpClient, private router: Router) {
   }
@@ -17,20 +17,28 @@ export class PostsService {
   getPosts(postsPerPage: number, currentPage: number) {
     const queryParams = `?pagesize=${postsPerPage}&page=${currentPage}`;
     this.http
-      .get<{ message: string, posts: any }>('http://localhost:3000/api/posts' + queryParams)
-      .pipe(map((postData) => {
-        return postData.posts.map(post => {
+      .get<{ message: string, posts: any, maxPosts: number }>('http://localhost:3000/api/posts' + queryParams)
+      .pipe(
+        map(postData => {
           return {
-            title: post.title,
-            content: post.content,
-            id: post._id,
-            imagePath: post.imagePath
+            posts: postData.posts.map(post => {
+              return {
+                title: post.title,
+                content: post.content,
+                id: post._id,
+                imagePath: post.imagePath
+              };
+            }),
+            maxPosts: postData.maxPosts
           };
+        })
+      )
+      .subscribe((transformedPostData) => {
+        this.posts = transformedPostData.posts;
+        this.postsUpdated.next({
+          posts: [...this.posts],
+          postCount: transformedPostData.maxPosts
         });
-      }))
-      .subscribe((transformedPosts) => {
-        this.posts = transformedPosts;
-        this.postsUpdated.next([...this.posts]);
       });
   }
 
@@ -71,12 +79,12 @@ export class PostsService {
       postData.append('content', content);
       postData.append('image', image, title);
     } else {
-         postData = {
-         id: id,
-         title: title,
-         content: content,
-         imagePath: image
-       };
+      postData = {
+        id: id,
+        title: title,
+        content: content,
+        imagePath: image
+      };
     }
 
     this.http
@@ -89,7 +97,7 @@ export class PostsService {
           title: title,
           content: content,
           imagePath: ''
-        }
+        };
         updatedPosts[oldPostIndex] = post;
         this.posts = updatedPosts;
         this.postsUpdated.next([...this.posts]);
