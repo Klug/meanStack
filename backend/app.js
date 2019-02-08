@@ -10,7 +10,7 @@ const app = express();
 
 mongoose.connect("mongodb+srv://mean-admin:Sdfghk123@cluster0-w6ypl.mongodb.net/mean-stack?retryWrites=true")
   .then(() => {
-    console.log('Connected to database!')
+    console.log('Connected to database!');
   })
   .catch(() => {
     console.log('Connection failed!');
